@@ -33,7 +33,13 @@ const PIVOT = {
   rootRot: [200, 754],
   torso: [200, 552],
   head: [200, 276],
-  eyes: [23.961, 304.279], // cj-eyes local space (inside group-1 translate)
+  /* pupil rest centres in HEAD-LOCAL space — pupils are children of their
+     eyes, so look/blink transforms compose with head/torso/root motion */
+  pupilL: [170.144, 204.572],
+  pupilR: [230.158, 204.758],
+  /* pupil free-travel inside the eye ellipse: eye rx 6.5 / ry 10 minus
+     pupil radius 3.5 — clamped so pupils can never leave the eyeballs */
+  pupilRange: [3, 6.5],
   armL: [134, 352],
   armLelbow: [134, 440],
   armR: [266, 352],
@@ -122,7 +128,8 @@ class CharacterController {
 
     /* bind joints */
     const ids = [
-      "cj-root", "shadow", "cj-bob", "torso-rig", "head", "cj-eyes",
+      "cj-root", "shadow", "cj-bob", "torso-rig", "head",
+      "left-pupil", "right-pupil",
       "left-arm", "left-forearm", "right-arm", "right-forearm",
       "left-leg", "left-shin", "right-leg", "right-shin",
     ];
@@ -616,21 +623,33 @@ class CharacterController {
 
     this.applyPose(p, now);
 
-    /* blink */
+    /* pupils: one CLAMPED look offset for both eyes + blink squash.
+       Offset lives in head space, so it rides along with every head,
+       torso and root transform (spec §8/§10). The clamped normalized
+       direction keeps each pupil inside its eye boundary. */
     let sy = 1;
     if (this.blinkT > 0) {
       const bt = now - this.blinkT;
       if (bt < 130) sy = Math.abs(Math.cos((bt / 130) * Math.PI)) * 0.85 + 0.1;
       else this.blinkT = -1;
     }
-    const blinkTransform =
-      `translate(${p.eyeX.toFixed(2)} ${p.eyeY.toFixed(2)}) ` +
-      `translate(${PIVOT.eyes[0]} ${PIVOT.eyes[1]}) scale(1 ${sy.toFixed(2)}) translate(${-PIVOT.eyes[0]} ${-PIVOT.eyes[1]})`;
-    if (this.lastWritten.get("cj-eyes") !== blinkTransform) {
-      this.lastWritten.set("cj-eyes", blinkTransform);
-      this.joints["cj-eyes"]?.setAttribute?.("transform", blinkTransform);
+    const [rangeX, rangeY] = PIVOT.pupilRange;
+    const lim = Math.hypot(p.eyeX / rangeX, p.eyeY / rangeY);
+    const lookX = lim > 1 ? p.eyeX / lim : p.eyeX;
+    const lookY = lim > 1 ? p.eyeY / lim : p.eyeY;
+    const pupilT = (px: number, py: number) =>
+      `translate(${lookX.toFixed(2)} ${lookY.toFixed(2)}) ` +
+      `translate(${px} ${py}) scale(1 ${sy.toFixed(2)}) translate(${-px} ${-py})`;
+    const lt = pupilT(PIVOT.pupilL[0], PIVOT.pupilL[1]);
+    if (this.lastWritten.get("left-pupil") !== lt) {
+      this.lastWritten.set("left-pupil", lt);
+      this.joints["left-pupil"]?.setAttribute?.("transform", lt);
     }
-    /* (cj-eyes id unchanged — it now wraps the avatar's pupil groups) */
+    const rt = pupilT(PIVOT.pupilR[0], PIVOT.pupilR[1]);
+    if (this.lastWritten.get("right-pupil") !== rt) {
+      this.lastWritten.set("right-pupil", rt);
+      this.joints["right-pupil"]?.setAttribute?.("transform", rt);
+    }
 
     /* breathing bob + shadow */
     const bob = this.reduced ? 0 : Math.sin((this.time / 3.4) * Math.PI * 2) * 1.5;

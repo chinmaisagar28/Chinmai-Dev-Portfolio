@@ -106,15 +106,17 @@ export const poses: Record<string, Pose> = {
     torsoRot: 1,
   }),
 
-  /* inspecting the Zoho diagram — lean in, eyes right */
+  /* inspecting the Zoho diagram — lean in, eyes toward the content.
+     The guide stages in the RIGHT gutter for this section, so the
+     diagram sits to its LEFT: head + pupils turn left. */
   inspect: pose({
     armRux: -30,
     armRelbow: -110,
     armLux: -3,
-    headRot: 4,
-    eyeX: 2.5,
+    headRot: -4,
+    eyeX: -2.5,
     eyeY: 1,
-    torsoRot: -1,
+    torsoRot: 1,
   }),
 
   /* guiding toward the contact form */

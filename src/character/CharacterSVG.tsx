@@ -1,30 +1,57 @@
 /**
- * CHARACTER SVG — Chinmai's uploaded avatar (VectorImage.Svg), surgically
- * repaired and rig-integrated. The vector artwork is the user's final
- * character: fair skin, brown long-sleeve shirt, black pants, dark hair.
+ * CHARACTER SVG — Chinmai's avatar as a single coherent 2D articulated rig.
+ * Artwork unchanged: fair skin, brown long-sleeve shirt, black pants, dark
+ * hair. What changed in THIS revision is the skeletal architecture only.
  *
- * ARM GEOMETRY REPAIR (this revision): each upper arm previously ended in a
- * straight diagonal below the shoulder pivot, which opened a hollow wedge of
- * background between shoulder and raised forearm whenever the pose rig raised
- * the arm. The closing diagonal was replaced (both arms, mirrored) with an
- * inner armhole seam + a shoulder-cap Bézier that hugs the shirt's shoulder
- * line at rest and CONTAINS the shoulder pivot, so every raised pose stays
- * anatomically connected. Outer silhouette, elbow joint, hands, pose system:
- * unchanged.
+ * RIG CONTRACT (parent → child; every rotating bone pivots at its joint):
+ *   character (matrix)
+ *   └── cj-root        jump / root tilt        pivot 200,754 (feet)
+ *       ├── shadow     ground shadow scale     pivot 200,758
+ *       └── cj-bob     breathing bob
+ *           ├── legs (pelvis)
+ *           │   ├── left-leg   hip  170,544
+ *           │   │   └── left-shin  knee 170,650
+ *           │   │       └── left-shoe  ankle 170,718
+ *           │   └── right-leg  hip  230,544
+ *           │       └── right-shin knee 230,650
+ *           │           └── right-shoe ankle 230,718
+ *           └── torso-rig      lean     pivot 200,552
+ *               ├── neck       pivot 200,330
+ *               ├── body > shirt
+ *               ├── deltoid-left   STATIC shoulder cap (does NOT rotate)
+ *               ├── left-arm       shoulder 134,352
+ *               │   ├── left-upper-arm          capsule, hem hugs the elbow
+ *               │   └── left-forearm   elbow 134,440
+ *               │       └── left-hand wrist 134,552
+ *               ├── deltoid-right  STATIC shoulder cap
+ *               ├── right-arm      shoulder 266,352
+ *               │   ├── right-upper-arm
+ *               │   └── right-forearm  elbow 266,440
+ *               │       └── right-hand wrist 266,552
+ *               └── head           neck 200,276
+ *                   ├── ears · face · hair
+ *                   ├── left-eye  └── left-pupil   (child of the eye)
+ *                   ├── right-eye └── right-pupil  (child of the eye)
+ *                   └── mouth
  *
- * Group contract (ids the controller binds to — rig wrappers marked +):
- *   cj-root (+ wraps all: jump / root rotation, pivot = feet 200,754)
- *   shadow                     ground shadow scale, pivot 200,758
- *   cj-bob (+ wraps legs+torso+pupils: breathing bob)
- *   torso-rig   (pivot 200,552) > head (pivot 200,276)
- *   left-arm    (pivot 134,352) > left-forearm  (pivot 134,440) > left-hand
- *   right-arm   (pivot 266,352) > right-forearm (pivot 266,440) > right-hand
- *   left-leg    (pivot 170,544) > left-shin     (pivot 170,650) > left-shoe
- *   right-leg   (pivot 230,544) > right-shin    (pivot 230,650) > right-shoe
- *   cj-eyes  (+ wraps the two pupil groups for blink + mouse-follow look)
+ * ARM GEOMETRY (replaces the previous cap-sleeve + seam patch):
+ *   Each bone is a closed capsule. The upper arm is a shoulder ellipse
+ *   (rx18 ry12) centered ON the shoulder pivot, tapering into a 15-radius
+ *   hem arc centered ON the elbow pivot. The forearm is a 18.5-radius cap
+ *   centered ON the elbow pivot — strictly larger than the hem it covers —
+ *   so the elbow joint stays sealed at ANY shoulder × elbow angle pair.
+ *   Two STATIC deltoid caps (torso layer, under the arms, sleeve-coloured)
+ *   own the shoulder region: when a pose lifts the arm away, the cap — not
+ *   background — fills the vacated armpit. No hollow shoulder, no floating
+ *   forearm, no wedges.
  *
- * The original Figma group ids (character, group-1, group-22, group-26...)
- * are preserved wherever possible.
+ * EYES: the pupils are now CHILDREN of their eyes inside the head group, so
+ * they inherit head rotation/translation, torso lean and root tilt. The
+ * former `group-1` pupil overlay (a world-space sibling of the torso that
+ * let pupils drift off the face) is removed. Pupil ids left-pupil /
+ * right-pupil replace the Figma group-26 / group-27 ids; rest coordinates
+ * are converted from the overlay's translate(176.19008 -99.614404) space
+ * into head-local coordinates (pixel-identical placement).
  */
 
 export function CharacterSVG({ className }: { className?: string }) {
@@ -34,7 +61,9 @@ export function CharacterSVG({ className }: { className?: string }) {
       className={className}
       role="img"
       aria-label="Illustrated guide character of Chinmai"
-      // wide-safe: geometry spans the full viewBox, feet centre x = 258.1
+      // Raised poses (wave/point/happy) extend past the viewBox edges —
+      // paint them instead of clipping hands/forearms at the viewport.
+      style={{ overflow: "visible" }}
     >
       <defs>
         <clipPath id="hair-clip">
@@ -59,16 +88,16 @@ export function CharacterSVG({ className }: { className?: string }) {
           </g>
 
           <g id="cj-bob">
-            {/* ---------------- LEGS (behind torso) ---------------- */}
+            {/* ---------------- LEGS (behind torso; hip→knee→ankle chain) ---------------- */}
             <g id="legs">
-              <g id="left-leg" style={{ transformOrigin: "170px 544px" }}>
+              <g id="left-leg">
                 <path id="left-thigh" d="M138 536 L198 536 L196 650 L144 650 Z" fill="#25252C" />
                 <path d="M138 536 L154 536 L150 650 L144 650 Z" fill="#17171C" />
-                <g id="left-shin" style={{ transformOrigin: "170px 650px" }}>
+                <g id="left-shin">
                   <circle id="left-knee" cx="170" cy="650" r="26" fill="#25252C" />
                   <path d="M144 650 L196 650 L192 722 L148 722 Z" fill="#25252C" />
                   <path d="M144 650 L158 650 L154 722 L148 722 Z" fill="#17171C" />
-                  <g id="left-shoe" style={{ transformOrigin: "170px 718px" }}>
+                  <g id="left-shoe">
                     <path
                       d="M144 714 L194 714 L198 738 Q200 750 186 750 L132 750 Q122 750 128 736 Z"
                       fill="#3A3B45"
@@ -77,14 +106,14 @@ export function CharacterSVG({ className }: { className?: string }) {
                   </g>
                 </g>
               </g>
-              <g id="right-leg" style={{ transformOrigin: "230px 544px" }}>
+              <g id="right-leg">
                 <path id="right-thigh" d="M202 536 L262 536 L256 650 L204 650 Z" fill="#25252C" />
                 <path d="M246 536 L262 536 L256 650 L250 650 Z" fill="#17171C" />
-                <g id="right-shin" style={{ transformOrigin: "230px 650px" }}>
+                <g id="right-shin">
                   <circle id="right-knee" cx="230" cy="650" r="26" fill="#25252C" />
                   <path d="M204 650 L256 650 L252 722 L208 722 Z" fill="#25252C" />
                   <path d="M242 650 L256 650 L252 722 L246 722 Z" fill="#17171C" />
-                  <g id="right-shoe" style={{ transformOrigin: "230px 718px" }}>
+                  <g id="right-shoe">
                     <path
                       d="M256 714 L206 714 L202 738 Q200 750 214 750 L268 750 Q278 750 272 736 Z"
                       fill="#3A3B45"
@@ -96,8 +125,8 @@ export function CharacterSVG({ className }: { className?: string }) {
             </g>
 
             {/* ---------------- TORSO RIG ---------------- */}
-            <g id="torso-rig" style={{ transformOrigin: "200px 552px" }}>
-              <g id="neck" style={{ transformOrigin: "200px 330px" }}>
+            <g id="torso-rig">
+              <g id="neck">
                 <rect x="174" y="262" width="52" height="68" rx="10" fill="#FCDDB9" />
                 <path
                   d="M 174 303.879 C 193.797 317.369 206.794 320.063 226 300.409 L 226 328 L 240.95 328.3 C 237.75 347.3 218.9 386.8 200 386.8 C 181.1 386.8 162.25 347.3 159.05 328.3 L 174 328 L 174 303.879 Z"
@@ -141,27 +170,35 @@ export function CharacterSVG({ className }: { className?: string }) {
                 </g>
               </g>
 
-              {/* ---------------- LEFT ARM (shoulder-capped sleeve) ---------------- */}
-              <g id="left-arm" style={{ transformOrigin: "134px 352px" }}>
+              {/* STATIC deltoid cap — owns the left shoulder region so raised
+                  arms never reveal a background wedge at the armpit */}
+              <path
+                id="deltoid-left"
+                fill="#946132"
+                d="M 133 342 C 126 342.5 118.5 346 114.6 352.5 C 111.8 357.2 111.6 366 113.2 374.5 C 114.6 382.4 116.4 390.5 119.6 396.4 C 121.4 399.7 124.8 400.4 127 398.2 C 130.4 394.8 132.8 384 133.6 371 C 134.2 360.8 134 350 133 342 Z"
+              />
+
+              {/* ---------------- LEFT ARM (shoulder → elbow → wrist chain) ---------------- */}
+              <g id="left-arm">
                 <g id="left-upper-arm">
-                  {/* repaired: armhole seam + shoulder cap containing pivot (134,352) */}
+                  {/* capsule: shoulder ellipse contains pivot (134,352);
+                      hem is a 15-radius arc centered on the elbow (134,440) */}
                   <path
-                    d="M121.7 369.3 C119.7 375.9 118.4 383.9 118 392.7 L115.4 456 L150.2 456 C149.5 452 148 448 146.3 444.3 C150 410 152.5 375 153.5 340 C138 343.5 130 350.5 121.7 369.3 Z"
+                    d="M 116 352 A 18 12 0 0 1 152 352 L 149 440 A 15 15 0 0 1 119 440 Z"
                     fill="#946132"
                   />
                 </g>
-                <g id="left-forearm" style={{ transformOrigin: "134px 440px" }}>
-                  <circle
-                    id="left-elbow"
-                    cx="134"
-                    cy="440"
-                    r="16.468"
+                <g id="left-forearm">
+                  {/* 18.5-radius elbow cap always covers the upper-arm hem */}
+                  <path
+                    d="M 115.5 440 A 18.5 18.5 0 0 1 152.5 440 L 152.5 540 Q 152.5 552 140 552 L 128 552 Q 115.5 552 115.5 540 Z"
                     fill="#946132"
-                    style={{ transformBox: "fill-box", transformOrigin: "50% 50%" }}
                   />
-                  <path d="M116 440 L150.7 440 L150.7 552 L122 552 Q113 552 113 543 Z" fill="#946132" />
-                  <path d="M113.2 526 L150.7 526 L150.7 552 L122 552 Q113 552 113 543 Z" fill="#7A4F28" />
-                  <g id="left-hand" style={{ transformOrigin: "134px 552px" }}>
+                  <path
+                    d="M 115.5 526 L 152.5 526 L 152.5 540 Q 152.5 552 140 552 L 128 552 Q 115.5 552 115.5 540 Z"
+                    fill="#7A4F28"
+                  />
+                  <g id="left-hand">
                     <ellipse cx="134" cy="576" rx="19" ry="24" fill="#FCDDB9" />
                     <ellipse cx="154" cy="568" rx="7" ry="13" fill="#FCDDB9" transform="rotate(-15 154 568)" />
                     <path
@@ -174,20 +211,31 @@ export function CharacterSVG({ className }: { className?: string }) {
                 </g>
               </g>
 
-              {/* ---------------- RIGHT ARM (shoulder-capped sleeve) ---------------- */}
-              <g id="right-arm" style={{ transformOrigin: "266px 352px" }}>
+              {/* STATIC deltoid cap — right shoulder */}
+              <path
+                id="deltoid-right"
+                fill="#A56C38"
+                d="M 267 342 C 274 342.5 281.5 346 285.4 352.5 C 288.2 357.2 288.4 366 286.8 374.5 C 285.4 382.4 283.6 390.5 280.4 396.4 C 278.6 399.7 275.2 400.4 273 398.2 C 269.6 394.8 267.2 384 266.4 371 C 265.8 360.8 266 350 267 342 Z"
+              />
+
+              {/* ---------------- RIGHT ARM (mirror of the left chain) ---------------- */}
+              <g id="right-arm">
                 <g id="right-upper-arm">
-                  {/* repaired: armhole seam + shoulder cap containing pivot (266,352) */}
                   <path
-                    d="M278.3 369.3 C280.3 375.9 281.6 383.9 282 392.7 L284.6 456 L249.8 456 C250.5 452 252 448 253.7 444.3 C250 410 247.5 375 246.5 340 C262 343.5 270 350.5 278.3 369.3 Z"
+                    d="M 284 352 A 18 12 0 0 0 248 352 L 251 440 A 15 15 0 0 0 281 440 Z"
                     fill="#A56C38"
                   />
                 </g>
-                <g id="right-forearm" style={{ transformOrigin: "266px 440px" }}>
-                  <circle id="right-elbow" cx="266" cy="440" r="15.089" fill="#A56C38" />
-                  <path d="M284 440 L249.3 440 L249.3 552 L278 552 Q287 552 287 543 Z" fill="#A56C38" />
-                  <path d="M286.8 526 L249.3 526 L249.3 552 L278 552 Q287 552 287 543 Z" fill="#8A5A2E" />
-                  <g id="right-hand" style={{ transformOrigin: "266px 552px" }}>
+                <g id="right-forearm">
+                  <path
+                    d="M 284.5 440 A 18.5 18.5 0 0 0 247.5 440 L 247.5 540 Q 247.5 552 260 552 L 272 552 Q 284.5 552 284.5 540 Z"
+                    fill="#A56C38"
+                  />
+                  <path
+                    d="M 284.5 526 L 247.5 526 L 247.5 540 Q 247.5 552 260 552 L 272 552 Q 284.5 552 284.5 540 Z"
+                    fill="#8A5A2E"
+                  />
+                  <g id="right-hand">
                     <ellipse cx="266" cy="576" rx="19" ry="24" fill="#FCDDB9" />
                     <ellipse cx="246" cy="568" rx="7" ry="13" fill="#FCDDB9" transform="rotate(15 246 568)" />
                     <path
@@ -200,8 +248,8 @@ export function CharacterSVG({ className }: { className?: string }) {
                 </g>
               </g>
 
-              {/* ---------------- HEAD (neck included) ---------------- */}
-              <g id="head" style={{ transformOrigin: "200px 276px" }}>
+              {/* ---------------- HEAD (neck → skull → face chain) ---------------- */}
+              <g id="head">
                 <g id="ears">
                   <circle cx="134" cy="206" r="17" fill="#FCDDB9" />
                   <circle cx="266" cy="206" r="17" fill="#FCDDB9" />
@@ -251,11 +299,21 @@ export function CharacterSVG({ className }: { className?: string }) {
                     </g>
                   </g>
                 </g>
+                {/* eyes with pupils as CHILDREN — pupils inherit every head,
+                    torso and root transform and can never drift off the face */}
                 <g id="left-eye" style={{ transformBox: "fill-box", transformOrigin: "6.5px 10px" }}>
                   <ellipse cx="170" cy="204" rx="6.5" ry="10" fill="#5A3A2E" />
+                  <g id="left-pupil">
+                    <circle cx="170.144" cy="204.572" r="3.5" fill="#111111" />
+                    <circle cx="171.644" cy="202.072" r="1.5" fill="#FFFFFF" opacity="0.85" />
+                  </g>
                 </g>
                 <g id="right-eye" style={{ transformBox: "fill-box", transformOrigin: "6.5px 10px" }}>
                   <ellipse cx="230" cy="204" rx="6.5" ry="10" fill="#5A3A2E" />
+                  <g id="right-pupil">
+                    <circle cx="230.158" cy="204.758" r="3.5" fill="#111111" />
+                    <circle cx="231.658" cy="202.258" r="1.5" fill="#FFFFFF" opacity="0.85" />
+                  </g>
                 </g>
                 <g id="mouth">
                   <path
@@ -265,33 +323,6 @@ export function CharacterSVG({ className }: { className?: string }) {
                     fill="none"
                     strokeLinecap="round"
                   />
-                </g>
-              </g>
-            </g>
-
-            {/* ---------------- PUPIL OVERLAY (mouse-follow + blink) ---------------- */}
-            <g id="group-1" transform="matrix(1, 0, 0, 1, 176.19008, -99.614404)">
-              <g id="group-10" style={{ transformOrigin: "200px 552px" }}>
-                <g id="group-22" style={{ transformOrigin: "200px 276px" }}>
-                  <g id="group-24">
-                    <path d="M 136 112 C 136 112 136 246 136 200 L 136 112 Z" style={{ fill: "rgb(252, 221, 185)" }} />
-                    <path d="M 136 112 C 136 112 136 240 136 200 L 136 112 Z" fill="#F2C79B" />
-                  </g>
-                  <g id="cj-eyes">
-                    <g id="group-26" style={{ transformBox: "fill-box", transformOrigin: "50% 50%" }}>
-                      <g>
-                        <circle cx="-6.046" cy="304.186" r="3.5" fill="#111111" />
-                      </g>
-                      <circle cx="-4.546" cy="301.686" r="1.5" fill="#FFFFFF" opacity="0.85" />
-                    </g>
-                    <g id="group-27" style={{ transformBox: "fill-box", transformOrigin: "50% 50%" }}>
-                      <g>
-                        <circle cx="53.968" cy="304.372" r="3.5" fill="#111111" />
-                      </g>
-                      <circle cx="55.468" cy="301.872" r="1.5" fill="#FFFFFF" opacity="0.85" />
-                    </g>
-                  </g>
-                  <g id="group-28" />
                 </g>
               </g>
             </g>
