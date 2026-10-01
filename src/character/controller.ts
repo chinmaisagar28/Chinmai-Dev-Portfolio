@@ -17,23 +17,32 @@ import { characterBus, sectionStaging, type CharacterEvent } from "@/lib/bus";
 import { getPerfMode } from "@/lib/perf";
 import { poses, ZERO_POSE, type Pose } from "./poses";
 
-/* ---------- geometry constants (must match CharacterSVG viewBox) ---------- */
-const VB = { x: 50, y: 25, w: 100, h: 300 };
-const FEET = { x: 100, y: 310 }; // local user-units
+/* ---------- geometry constants (must match CharacterSVG viewBox) ----------
+   Chinmai avatar rig: viewBox 125.87 x 402.48, feet centre mapped through
+   the #character matrix (scale 0.5334). Pivots are in the character's LOCAL
+   space (pre-matrix), exactly as the joint groups use them. */
+const VB = { x: 195.161, y: 36.2549, w: 125.8725, h: 402.4796 };
+const FEET = { x: 258.097, y: 431.801 }; // viewBox units
+/* feet -> eye-line distance in viewBox units (look-at target height) */
+const EYE_LIFT = 293;
+/* the avatar's local units render ~2.36x smaller than the old 100-unit
+   viewBox — px-based look/breath offsets are compensated so the on-screen
+   motion magnitude stays identical */
+const LOOK_SCALE = 2.36;
 const PIVOT = {
-  rootRot: [100, 310],
-  torso: [100, 192],
-  head: [100, 118],
-  eyes: [100, 75],
-  armL: [76, 125],
-  armLelbow: [76, 172],
-  armR: [124, 125],
-  armRelbow: [124, 172],
-  legL: [88, 189],
-  legLknee: [88, 246],
-  legR: [112, 189],
-  legRknee: [112, 246],
-  shadow: [100, 315],
+  rootRot: [200, 754],
+  torso: [200, 552],
+  head: [200, 276],
+  eyes: [23.961, 304.279], // cj-eyes local space (inside group-1 translate)
+  armL: [134, 352],
+  armLelbow: [134, 440],
+  armR: [266, 352],
+  armRelbow: [266, 440],
+  legL: [170, 544],
+  legLknee: [170, 650],
+  legR: [230, 544],
+  legRknee: [230, 650],
+  shadow: [200, 758],
 } as const;
 
 type Vec = { x: number; y: number };
@@ -105,7 +114,7 @@ class CharacterController {
       this.charW = this.mobile ? 84 : 116;
       this.unit = this.charW / VB.w;
       stage.style.width = `${this.charW}px`;
-      stage.style.height = `${this.charW * 3}px`;
+      stage.style.height = `${this.charW * (VB.h / VB.w)}px`;
       stage.style.opacity = "0";
     } catch {
       return; // never break the site for the character (spec §42)
@@ -113,9 +122,9 @@ class CharacterController {
 
     /* bind joints */
     const ids = [
-      "char-root", "char-shadow", "cj-bob", "cj-torso", "cj-head", "cj-eyes",
-      "cj-armL", "cj-armLelbow", "cj-armR", "cj-armRelbow",
-      "cj-legL", "cj-legLknee", "cj-legR", "cj-legRknee",
+      "cj-root", "shadow", "cj-bob", "torso-rig", "head", "cj-eyes",
+      "left-arm", "left-forearm", "right-arm", "right-forearm",
+      "left-leg", "left-shin", "right-leg", "right-shin",
     ];
     for (const id of ids) this.joints[id] = document.getElementById(id);
 
@@ -220,7 +229,7 @@ class CharacterController {
     }
 
     if (this.mobile) {
-      return { pos: { x: vw - 50 * this.unit - 14, y: vh * 0.88 }, pose: st.pose };
+      return { pos: { x: vw - (FEET.x - VB.x) * this.unit - 14, y: vh * 0.88 }, pose: st.pose };
     }
 
     const cont = document.querySelector<HTMLElement>(".container-site");
@@ -257,7 +266,7 @@ class CharacterController {
       this.unit = this.charW / VB.w;
       if (this.stage) {
         this.stage.style.width = `${this.charW}px`;
-        this.stage.style.height = `${this.charW * 3}px`;
+        this.stage.style.height = `${this.charW * (VB.h / VB.w)}px`;
       }
     }
     const { pos, pose } = this.stagingTarget(section);
@@ -405,7 +414,7 @@ class CharacterController {
     this.unit = this.charW / VB.w;
     if (this.stage) {
       this.stage.style.width = `${this.charW}px`;
-      this.stage.style.height = `${this.charW * 3}px`;
+      this.stage.style.height = `${this.charW * (VB.h / VB.w)}px`;
     }
     if (wasMobile !== this.mobile || !this.journeyActive) {
       /* breakpoint or journey change — re-stage for the new layout */
@@ -466,7 +475,7 @@ class CharacterController {
     let ty = this.look.y;
     if (this.lookAtPoint && now < this.lookAtUntil) {
       const dx = this.lookAtPoint.x - this.pos.x;
-      const dy = this.lookAtPoint.y - (this.pos.y - 240 * this.unit);
+      const dy = this.lookAtPoint.y - (this.pos.y - EYE_LIFT * this.unit);
       const len = Math.max(1, Math.hypot(dx, dy));
       tx = clamp(dx / len, -1, 1);
       ty = clamp(dy / len, -1, 1);
@@ -532,17 +541,17 @@ class CharacterController {
     };
     const rot = (a: number, cx: number, cy: number) => `rotate(${a.toFixed(2)} ${cx} ${cy})`;
 
-    set("char-root", `translate(0 ${(-p.jump).toFixed(2)}) ${rot(p.rootRot, ...PIVOT.rootRot)}`);
-    set("cj-torso", rot(p.torsoRot, ...PIVOT.torso));
-    set("cj-head", `translate(${p.headX.toFixed(2)} ${p.headY.toFixed(2)}) ${rot(p.headRot, ...PIVOT.head)}`);
-    set("cj-armL", rot(p.armLux, ...PIVOT.armL));
-    set("cj-armLelbow", rot(p.armLelbow, ...PIVOT.armLelbow));
-    set("cj-armR", rot(p.armRux, ...PIVOT.armR));
-    set("cj-armRelbow", rot(p.armRelbow, ...PIVOT.armRelbow));
-    set("cj-legL", rot(p.legLhip, ...PIVOT.legL));
-    set("cj-legLknee", rot(p.legLknee, ...PIVOT.legLknee));
-    set("cj-legR", rot(p.legRhip, ...PIVOT.legR));
-    set("cj-legRknee", rot(p.legRknee, ...PIVOT.legRknee));
+    set("cj-root", `translate(0 ${(-p.jump).toFixed(2)}) ${rot(p.rootRot, ...PIVOT.rootRot)}`);
+    set("torso-rig", rot(p.torsoRot, ...PIVOT.torso));
+    set("head", `translate(${p.headX.toFixed(2)} ${p.headY.toFixed(2)}) ${rot(p.headRot, ...PIVOT.head)}`);
+    set("left-arm", rot(p.armLux, ...PIVOT.armL));
+    set("left-forearm", rot(p.armLelbow, ...PIVOT.armLelbow));
+    set("right-arm", rot(p.armRux, ...PIVOT.armR));
+    set("right-forearm", rot(p.armRelbow, ...PIVOT.armRelbow));
+    set("left-leg", rot(p.legLhip, ...PIVOT.legL));
+    set("left-shin", rot(p.legLknee, ...PIVOT.legLknee));
+    set("right-leg", rot(p.legRhip, ...PIVOT.legR));
+    set("right-shin", rot(p.legRknee, ...PIVOT.legRknee));
   }
 
   private render(now: number) {
@@ -552,18 +561,18 @@ class CharacterController {
     if (!this.reduced) {
       const breath = Math.sin((this.time / 3.4) * Math.PI * 2);
       const shift = Math.sin((this.time / 7.2) * Math.PI * 2);
-      p.headX += this.look.hx * 2.4;
-      p.headY += this.look.hy * 1.5;
+      p.headX += this.look.hx * 2.4 * LOOK_SCALE;
+      p.headY += this.look.hy * 1.5 * LOOK_SCALE;
       p.headRot += this.look.hx * 3 + shift * 0.6;
-      p.eyeX += this.look.hx * 2;
-      p.eyeY += this.look.hy * 1.1;
+      p.eyeX += this.look.hx * 2 * LOOK_SCALE;
+      p.eyeY += this.look.hy * 1.1 * LOOK_SCALE;
       p.armLux += breath * 0.7;
       p.armRux += breath * 0.7;
       p.torsoRot += shift * 1.1;
-      if (!this.low) p.headY += breath * 0.5;
+      if (!this.low) p.headY += breath * 0.5 * LOOK_SCALE;
     } else {
-      p.headX += this.look.hx * 2;
-      p.eyeX += this.look.hx * 1.6;
+      p.headX += this.look.hx * 2 * LOOK_SCALE;
+      p.eyeX += this.look.hx * 1.6 * LOOK_SCALE;
     }
 
     /* dash arc hop */
@@ -621,6 +630,7 @@ class CharacterController {
       this.lastWritten.set("cj-eyes", blinkTransform);
       this.joints["cj-eyes"]?.setAttribute?.("transform", blinkTransform);
     }
+    /* (cj-eyes id unchanged — it now wraps the avatar's pupil groups) */
 
     /* breathing bob + shadow */
     const bob = this.reduced ? 0 : Math.sin((this.time / 3.4) * Math.PI * 2) * 1.5;
@@ -631,9 +641,9 @@ class CharacterController {
     }
     const sh = clamp(p.shadow, 0.6, 1.15);
     const shadowT = `translate(${PIVOT.shadow[0]} ${PIVOT.shadow[1]}) scale(${sh.toFixed(3)} 1) translate(${-PIVOT.shadow[0]} ${-PIVOT.shadow[1]})`;
-    if (this.lastWritten.get("char-shadow") !== shadowT) {
-      this.lastWritten.set("char-shadow", shadowT);
-      this.joints["char-shadow"]?.setAttribute?.("transform", shadowT);
+    if (this.lastWritten.get("shadow") !== shadowT) {
+      this.lastWritten.set("shadow", shadowT);
+      this.joints["shadow"]?.setAttribute?.("transform", shadowT);
     }
 
     /* stage position */

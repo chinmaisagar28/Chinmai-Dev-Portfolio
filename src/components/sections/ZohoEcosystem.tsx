@@ -125,11 +125,16 @@ export function ZohoEcosystem() {
                 );
               })}
 
-              {/* orbit hint */}
-              <p className="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono text-[9px] uppercase tracking-[0.24em] text-cream-3">
-                hover a node — every link is real work
-              </p>
             </div>
+
+            {/* orbit hint — its own flow block below the diagram so the visual
+                above gets clear vertical breathing space (responsive clamp,
+                aligned to the same content width as the diagram) */}
+            <p
+              className="mx-auto mt-[clamp(24px,3vw,48px)] hidden w-full max-w-[560px] text-center font-mono text-[9px] uppercase tracking-[0.24em] text-cream-3 md:block"
+            >
+              hover a node — every link is real work
+            </p>
 
             {/* mobile chip grid */}
             <div className="grid grid-cols-2 gap-2.5 md:hidden">

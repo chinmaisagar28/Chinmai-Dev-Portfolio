@@ -1,147 +1,299 @@
 /**
- * CHARACTER SVG — a lightweight vector guide inspired by Chinmai's portrait
- * (dark curly hair, warm skin tone, rust plaid shirt with navy collar).
+ * CHARACTER SVG — Chinmai's uploaded avatar (VectorImage.Svg), surgically
+ * repaired and rig-integrated. The vector artwork is the user's final
+ * character: fair skin, brown long-sleeve shirt, black pants, dark hair.
  *
- * Built entirely from SVG primitives organized into independently transformable
- * nested groups (spec §6–7). The controller drives these groups via transform
- * attributes with ABSOLUTE pivot coordinates — no bbox drift, no redraws,
- * ~40 elements total.
+ * ARM GEOMETRY REPAIR (this revision): each upper arm previously ended in a
+ * straight diagonal below the shoulder pivot, which opened a hollow wedge of
+ * background between shoulder and raised forearm whenever the pose rig raised
+ * the arm. The closing diagonal was replaced (both arms, mirrored) with an
+ * inner armhole seam + a shoulder-cap Bézier that hugs the shirt's shoulder
+ * line at rest and CONTAINS the shoulder pivot, so every raised pose stays
+ * anatomically connected. Outer silhouette, elbow joint, hands, pose system:
+ * unchanged.
  *
- * Group contract (ids the controller binds to):
- *   char-root, char-shadow, cj-bob, cj-torso, cj-head, cj-eyes,
- *   cj-armL (pivot 76,125)  > cj-armLelbow (76,172)
- *   cj-armR (pivot 124,125) > cj-armRelbow (124,172)
- *   cj-legL (pivot 88,189)  > cj-legLknee (88,246)
- *   cj-legR (pivot 112,189) > cj-legRknee (112,246)
+ * Group contract (ids the controller binds to — rig wrappers marked +):
+ *   cj-root (+ wraps all: jump / root rotation, pivot = feet 200,754)
+ *   shadow                     ground shadow scale, pivot 200,758
+ *   cj-bob (+ wraps legs+torso+pupils: breathing bob)
+ *   torso-rig   (pivot 200,552) > head (pivot 200,276)
+ *   left-arm    (pivot 134,352) > left-forearm  (pivot 134,440) > left-hand
+ *   right-arm   (pivot 266,352) > right-forearm (pivot 266,440) > right-hand
+ *   left-leg    (pivot 170,544) > left-shin     (pivot 170,650) > left-shoe
+ *   right-leg   (pivot 230,544) > right-shin    (pivot 230,650) > right-shoe
+ *   cj-eyes  (+ wraps the two pupil groups for blink + mouse-follow look)
+ *
+ * The original Figma group ids (character, group-1, group-22, group-26...)
+ * are preserved wherever possible.
  */
 
 export function CharacterSVG({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="50 25 100 300"
+      viewBox="195.161 36.2549 125.8725 402.4796"
       className={className}
       role="img"
       aria-label="Illustrated guide character of Chinmai"
-      // wide-safe: geometry spans x 66..134, y 33..321
+      // wide-safe: geometry spans the full viewBox, feet centre x = 258.1
     >
       <defs>
-        <clipPath id="torsoClip">
-          <rect x="68" y="112" width="64" height="88" rx="22" />
+        <clipPath id="hair-clip">
+          <path
+            fill="#2A2430"
+            stroke="#2A2430"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            d="M 179.286 -100.77 L 173.6 -116.9 L 177.279 -124.38 L 172.262 -134.67 L 166.243 -118.83 L 168.584 -149.12 L 161.896 -161.07 L 177.613 -173.02 C 177.613 -173.02 151.863 -167.88 151.529 -156.48 C 151.529 -156.48 153.2 -172.32 174.268 -179.27 L 187.98 -191.49 L 205.036 -203.17 L 225.769 -210.39 L 262.221 -212.89 C 262.221 -212.89 270.916 -212.89 276.266 -208.45 C 281.617 -204 277.604 -213.73 277.604 -213.73 C 277.604 -213.73 291.316 -215.4 293.991 -205.67 L 307.033 -202.9 L 329.439 -190.39 C 329.439 -190.39 345.825 -173.15 341.143 -157.32 L 338.802 -162.88 C 338.802 -162.88 324.757 -159.82 344.822 -148.99 L 338.802 -133.97 L 333.117 -116.46 L 326.095 -102.3 L 322.081 -93.407 L 319.406 -90.35 L 315.727 -97.858 L 317.399 -108.98 L 310.378 -116.19 L 304.357 -127.87 L 292.653 -135.36 L 269.911 -135.92 L 242.155 -137.31 L 229.782 -132.58 L 213.395 -125.08 C 213.395 -125.08 204.032 -121.74 203.697 -121.47 C 203.363 -121.19 194.333 -109.8 194.333 -109.8 C 194.333 -109.8 193.999 -102.85 193.999 -102.57 C 193.999 -102.3 193.664 -86.459 193.664 -86.459 L 187.646 -86.459 L 179.286 -100.77 Z"
+          />
         </clipPath>
       </defs>
 
-      <g id="char-root">
-        {/* ground shadow — scales with jumps/breathing */}
-        <ellipse
-          id="char-shadow"
-          cx="100"
-          cy="315"
-          rx="42"
-          ry="6"
-          fill="rgba(27,21,17,0.16)"
-        />
-
-        <g id="cj-bob">
-          {/* ---------------- LEGS (behind torso) ---------------- */}
-          <g id="cj-legL">
-            <rect x="80.5" y="188" width="15" height="59" rx="7" fill="#2B2119" />
-            <g id="cj-legLknee">
-              <rect x="81.5" y="245" width="13" height="53" rx="6.5" fill="#2B2119" />
-              <rect x="75" y="295" width="26" height="13" rx="6.5" fill="#3B2C21" />
-              <rect x="75" y="303" width="26" height="5" rx="2.5" fill="#241A12" />
-            </g>
-          </g>
-          <g id="cj-legR">
-            <rect x="104.5" y="188" width="15" height="59" rx="7" fill="#2B2119" />
-            <g id="cj-legRknee">
-              <rect x="105.5" y="245" width="13" height="53" rx="6.5" fill="#2B2119" />
-              <rect x="99" y="295" width="26" height="13" rx="6.5" fill="#3B2C21" />
-              <rect x="99" y="303" width="26" height="5" rx="2.5" fill="#241A12" />
-            </g>
+      <g
+        id="character"
+        transform="matrix(0.5333579778671265, 0, 0, 0.5333579778671265, 151.42562979031823, 29.648969871170593)"
+      >
+        <g id="cj-root">
+          {/* ground shadow — scales with jumps/breathing */}
+          <g id="shadow">
+            <ellipse cx="200" cy="758" rx="118" ry="9" fill="#000" opacity="0.12" />
           </g>
 
-          {/* ---------------- TORSO ---------------- */}
-          <g id="cj-torso">
-            <rect x="68" y="112" width="64" height="88" rx="22" fill="#B4552D" />
-            {/* plaid weave, clipped to torso */}
-            <g clipPath="url(#torsoClip)" opacity="0.55">
-              <g stroke="#8A3A1E" strokeWidth="1.3">
-                <line x1="79" y1="112" x2="79" y2="200" />
-                <line x1="90" y1="112" x2="90" y2="200" />
-                <line x1="101" y1="112" x2="101" y2="200" />
-                <line x1="112" y1="112" x2="112" y2="200" />
-                <line x1="121" y1="112" x2="121" y2="200" />
-                <line x1="68" y1="127" x2="132" y2="127" />
-                <line x1="68" y1="143" x2="132" y2="143" />
-                <line x1="68" y1="159" x2="132" y2="159" />
-                <line x1="68" y1="175" x2="132" y2="175" />
-                <line x1="68" y1="191" x2="132" y2="191" />
+          <g id="cj-bob">
+            {/* ---------------- LEGS (behind torso) ---------------- */}
+            <g id="legs">
+              <g id="left-leg" style={{ transformOrigin: "170px 544px" }}>
+                <path id="left-thigh" d="M138 536 L198 536 L196 650 L144 650 Z" fill="#25252C" />
+                <path d="M138 536 L154 536 L150 650 L144 650 Z" fill="#17171C" />
+                <g id="left-shin" style={{ transformOrigin: "170px 650px" }}>
+                  <circle id="left-knee" cx="170" cy="650" r="26" fill="#25252C" />
+                  <path d="M144 650 L196 650 L192 722 L148 722 Z" fill="#25252C" />
+                  <path d="M144 650 L158 650 L154 722 L148 722 Z" fill="#17171C" />
+                  <g id="left-shoe" style={{ transformOrigin: "170px 718px" }}>
+                    <path
+                      d="M144 714 L194 714 L198 738 Q200 750 186 750 L132 750 Q122 750 128 736 Z"
+                      fill="#3A3B45"
+                    />
+                    <rect x="122" y="746" width="82" height="8" rx="4" fill="#EDEDED" />
+                  </g>
+                </g>
               </g>
-            </g>
-            {/* placket + buttons */}
-            <line x1="100" y1="128" x2="100" y2="198" stroke="#8A3A1E" strokeWidth="2" opacity="0.75" />
-            <circle cx="100" cy="141" r="1.7" fill="#6E2D14" />
-            <circle cx="100" cy="161" r="1.7" fill="#6E2D14" />
-            <circle cx="100" cy="181" r="1.7" fill="#6E2D14" />
-            {/* hem shade */}
-            <rect x="68" y="191" width="64" height="9" fill="rgba(0,0,0,0.08)" clipPath="url(#torsoClip)" />
-
-            {/* ---------------- LEFT ARM ---------------- */}
-            <g id="cj-armL">
-              <rect x="69.5" y="124" width="13" height="48" rx="6.5" fill="#A34A26" />
-              <g id="cj-armLelbow">
-                <rect x="70.5" y="170" width="11" height="40" rx="5.5" fill="#C68B59" />
-                <circle cx="76" cy="217" r="7" fill="#C68B59" />
-              </g>
-            </g>
-
-            {/* ---------------- RIGHT ARM ---------------- */}
-            <g id="cj-armR">
-              <rect x="117.5" y="124" width="13" height="48" rx="6.5" fill="#A34A26" />
-              <g id="cj-armRelbow">
-                <rect x="118.5" y="170" width="11" height="40" rx="5.5" fill="#C68B59" />
-                <circle cx="124" cy="217" r="7" fill="#C68B59" />
+              <g id="right-leg" style={{ transformOrigin: "230px 544px" }}>
+                <path id="right-thigh" d="M202 536 L262 536 L256 650 L204 650 Z" fill="#25252C" />
+                <path d="M246 536 L262 536 L256 650 L250 650 Z" fill="#17171C" />
+                <g id="right-shin" style={{ transformOrigin: "230px 650px" }}>
+                  <circle id="right-knee" cx="230" cy="650" r="26" fill="#25252C" />
+                  <path d="M204 650 L256 650 L252 722 L208 722 Z" fill="#25252C" />
+                  <path d="M242 650 L256 650 L252 722 L246 722 Z" fill="#17171C" />
+                  <g id="right-shoe" style={{ transformOrigin: "230px 718px" }}>
+                    <path
+                      d="M256 714 L206 714 L202 738 Q200 750 214 750 L268 750 Q278 750 272 736 Z"
+                      fill="#3A3B45"
+                    />
+                    <rect x="196" y="746" width="82" height="8" rx="4" fill="#EDEDED" />
+                  </g>
+                </g>
               </g>
             </g>
 
-            {/* ---------------- HEAD (neck included) ---------------- */}
-            <g id="cj-head">
-              {/* neck */}
-              <rect x="93" y="98" width="14" height="22" fill="#C68B59" />
-              <rect x="93" y="98" width="14" height="7" fill="rgba(0,0,0,0.14)" />
-              {/* ears */}
-              <circle cx="70" cy="74" r="5.5" fill="#C68B59" />
-              <circle cx="130" cy="74" r="5.5" fill="#C68B59" />
-              <circle cx="70" cy="74" r="2.2" fill="#A96F45" />
-              <circle cx="130" cy="74" r="2.2" fill="#A96F45" />
-              {/* face */}
-              <rect x="72" y="40" width="56" height="62" rx="27" fill="#C68B59" />
-              {/* curly hair — base mass + curls + sideburns */}
-              <ellipse cx="100" cy="45" rx="31" ry="16" fill="#191310" />
-              <circle cx="80" cy="39" r="10" fill="#191310" />
-              <circle cx="95" cy="33" r="11.5" fill="#191310" />
-              <circle cx="111" cy="34" r="11.5" fill="#191310" />
-              <circle cx="123" cy="43" r="9" fill="#191310" />
-              <circle cx="75" cy="47" r="8" fill="#191310" />
-              <circle cx="126" cy="52" r="7" fill="#191310" />
-              <path d="M70,66 C69,76 70,84 73,90 L77,86 C74,80 73,73 74,66 Z" fill="#191310" />
-              <path d="M130,66 C131,76 130,84 127,90 L123,86 C126,80 127,73 126,66 Z" fill="#191310" />
-              {/* brows */}
-              <rect x="83.5" y="65" width="12" height="3" rx="1.5" fill="#191310" />
-              <rect x="104.5" y="65" width="12" height="3" rx="1.5" fill="#191310" />
-              {/* eyes (blink + look) */}
-              <g id="cj-eyes">
-                <circle cx="89.5" cy="75" r="3.4" fill="#1B1511" />
-                <circle cx="110.5" cy="75" r="3.4" fill="#1B1511" />
-                <circle cx="90.7" cy="73.8" r="1.1" fill="#F2EDE3" opacity="0.9" />
-                <circle cx="111.7" cy="73.8" r="1.1" fill="#F2EDE3" opacity="0.9" />
+            {/* ---------------- TORSO RIG ---------------- */}
+            <g id="torso-rig" style={{ transformOrigin: "200px 552px" }}>
+              <g id="neck" style={{ transformOrigin: "200px 330px" }}>
+                <rect x="174" y="262" width="52" height="68" rx="10" fill="#FCDDB9" />
+                <path
+                  d="M 174 303.879 C 193.797 317.369 206.794 320.063 226 300.409 L 226 328 L 240.95 328.3 C 237.75 347.3 218.9 386.8 200 386.8 C 181.1 386.8 162.25 347.3 159.05 328.3 L 174 328 L 174 303.879 Z"
+                  fill="#E8B98A"
+                />
               </g>
-              {/* nose */}
-              <path d="M100,78 L100,86" stroke="#A96F45" strokeWidth="2" strokeLinecap="round" />
-              <path d="M96,88 Q100,90.5 104,88" stroke="#A96F45" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-              {/* mustache hint + mouth */}
-              <path d="M93,91.5 Q100,94.5 107,91.5" stroke="rgba(25,19,16,0.45)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-              <path d="M93.5,96 Q100,100.5 106.5,96" stroke="#7A4630" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+              <g id="body">
+                <g id="shirt">
+                  <g transform="matrix(0.56 0 0 1.475 8.794 -281.75)">
+                    <path
+                      id="shirt-main"
+                      fill="#C48C52"
+                      d="M 429.439 565.244 L474.252 565.244 C 488.688 565.244 499.857 552.592 498.067 538.267 L 496.439 525.243 L 487.94 457.254 C 486.412 445.026 477.997 434.763 466.307 430.866 L 414.557 413.615 C 408.856 426.475 375.151 453.243 341.445 453.243 C 307.735 453.244 274.023 426.476 268.32 413.615 L 216.57 430.866 C 204.879 434.763 196.465 445.027 194.937 457.254 L 187.328 518.126 L 184.811 538.266 C 183.021 552.591 194.19 565.243 208.626 565.243 L 253.439 565.243 L 429.439 565.243 L 429.439 565.244 Z"
+                    />
+                    <polygon fill="#C48C52" points="333.439 429.243 341.439 453.243 314.974 453.864" />
+                    <polygon fill="#C48C52" points="349.439 429.243 341.439 453.243 367.905 453.864" />
+                    <path
+                      id="collar-left"
+                      fill="#946132"
+                      d="M 333.439 429.243 L 314.973 453.864 C 312.052 457.759 306.359 458.163 302.916 454.721 L 261.439 413.243 L 280.273 394.409 C 283.199 391.483 287.873 391.271 291.051 393.92 L 333.439 429.243 Z"
+                    />
+                    <path
+                      id="collar-right"
+                      fill="#A56C38"
+                      d="M 349.439 429.243 L 367.905 453.864 C 370.826 457.759 376.519 458.163 379.962 454.721 L 421.439 413.243 L 402.605 394.409 C 399.679 391.483 395.005 391.271 391.827 393.92 L 349.439 429.243 Z"
+                    />
+                    <polygon
+                      id="placket"
+                      fill="#A56C38"
+                      points="349.439 429.243 341.439 453.243 333.439 429.243 333.439 565.244 349.439 565.244"
+                    />
+                    <path
+                      fill="#946132"
+                      d="M 201.607 441.411 C 198.055 445.908 195.677 451.341 194.938 457.254 L 184.812 538.266 C 183.021 552.591 194.191 565.243 208.627 565.243 L 253.439 565.243 L 253.439 513.176 C 253.439 505.479 250.665 498.041 245.626 492.223 L 201.607 441.411 Z"
+                    />
+                    <path
+                      fill="#A56C38"
+                      d="M 481.271 441.411 C 484.823 445.908 487.201 451.341 487.94 457.254 L 498.066 538.266 C 499.857 552.591 488.687 565.243 474.251 565.243 L 429.439 565.243 L 429.439 513.176 C 429.439 505.479 432.213 498.041 437.252 492.223 L 481.271 441.411 Z"
+                    />
+                  </g>
+                </g>
+              </g>
+
+              {/* ---------------- LEFT ARM (shoulder-capped sleeve) ---------------- */}
+              <g id="left-arm" style={{ transformOrigin: "134px 352px" }}>
+                <g id="left-upper-arm">
+                  {/* repaired: armhole seam + shoulder cap containing pivot (134,352) */}
+                  <path
+                    d="M121.7 369.3 C119.7 375.9 118.4 383.9 118 392.7 L115.4 456 L150.2 456 C149.5 452 148 448 146.3 444.3 C150 410 152.5 375 153.5 340 C138 343.5 130 350.5 121.7 369.3 Z"
+                    fill="#946132"
+                  />
+                </g>
+                <g id="left-forearm" style={{ transformOrigin: "134px 440px" }}>
+                  <circle
+                    id="left-elbow"
+                    cx="134"
+                    cy="440"
+                    r="16.468"
+                    fill="#946132"
+                    style={{ transformBox: "fill-box", transformOrigin: "50% 50%" }}
+                  />
+                  <path d="M116 440 L150.7 440 L150.7 552 L122 552 Q113 552 113 543 Z" fill="#946132" />
+                  <path d="M113.2 526 L150.7 526 L150.7 552 L122 552 Q113 552 113 543 Z" fill="#7A4F28" />
+                  <g id="left-hand" style={{ transformOrigin: "134px 552px" }}>
+                    <ellipse cx="134" cy="576" rx="19" ry="24" fill="#FCDDB9" />
+                    <ellipse cx="154" cy="568" rx="7" ry="13" fill="#FCDDB9" transform="rotate(-15 154 568)" />
+                    <path
+                      d="M126 592 L126 600 M134 594 L134 602 M142 592 L142 600"
+                      stroke="#F2C79B"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </g>
+                </g>
+              </g>
+
+              {/* ---------------- RIGHT ARM (shoulder-capped sleeve) ---------------- */}
+              <g id="right-arm" style={{ transformOrigin: "266px 352px" }}>
+                <g id="right-upper-arm">
+                  {/* repaired: armhole seam + shoulder cap containing pivot (266,352) */}
+                  <path
+                    d="M278.3 369.3 C280.3 375.9 281.6 383.9 282 392.7 L284.6 456 L249.8 456 C250.5 452 252 448 253.7 444.3 C250 410 247.5 375 246.5 340 C262 343.5 270 350.5 278.3 369.3 Z"
+                    fill="#A56C38"
+                  />
+                </g>
+                <g id="right-forearm" style={{ transformOrigin: "266px 440px" }}>
+                  <circle id="right-elbow" cx="266" cy="440" r="15.089" fill="#A56C38" />
+                  <path d="M284 440 L249.3 440 L249.3 552 L278 552 Q287 552 287 543 Z" fill="#A56C38" />
+                  <path d="M286.8 526 L249.3 526 L249.3 552 L278 552 Q287 552 287 543 Z" fill="#8A5A2E" />
+                  <g id="right-hand" style={{ transformOrigin: "266px 552px" }}>
+                    <ellipse cx="266" cy="576" rx="19" ry="24" fill="#FCDDB9" />
+                    <ellipse cx="246" cy="568" rx="7" ry="13" fill="#FCDDB9" transform="rotate(15 246 568)" />
+                    <path
+                      d="M258 592 L258 600 M266 594 L266 602 M274 592 L274 600"
+                      stroke="#F2C79B"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </g>
+                </g>
+              </g>
+
+              {/* ---------------- HEAD (neck included) ---------------- */}
+              <g id="head" style={{ transformOrigin: "200px 276px" }}>
+                <g id="ears">
+                  <circle cx="134" cy="206" r="17" fill="#FCDDB9" />
+                  <circle cx="266" cy="206" r="17" fill="#FCDDB9" />
+                  <circle cx="135" cy="207" r="8" fill="#F2C79B" />
+                  <circle cx="265" cy="207" r="8" fill="#F2C79B" />
+                </g>
+                <g id="face">
+                  <path
+                    d="M136 112 L264 112 L264 200 C264 246 240 282 200 282 C160 282 136 246 136 200 Z"
+                    style={{ fill: "rgb(252, 221, 185)" }}
+                  />
+                  <path
+                    d="M136 112 L158 112 C150 150 150 230 172 274 C150 264 136 240 136 200 Z"
+                    fill="#F2C79B"
+                  />
+                  <path
+                    style={{
+                      stroke: "rgb(0, 0, 0)",
+                      paintOrder: "stroke markers",
+                      fillRule: "nonzero",
+                      strokeWidth: "0px",
+                      fill: "rgba(242, 199, 155, 0.68)",
+                    }}
+                    d="M 225.909 279.344 C 225.909 279.344 217.146 301.438 174.052 294.7 L 174.028 276.248 C 174.028 276.248 199.453 289.403 225.713 276.272 L 225.909 279.344 Z"
+                  />
+                </g>
+                <g id="hair">
+                  <g transform="translate(-56.5 278.5)">
+                    <path
+                      id="hair-shape"
+                      fill="#2A2430"
+                      stroke="#2A2430"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      d="M 179.286 -100.77 L 173.6 -116.9 L 177.279 -124.38 L 172.262 -134.67 L 166.243 -118.83 L 168.584 -149.12 L 161.896 -161.07 L 177.613 -173.02 C 177.613 -173.02 151.863 -167.88 151.529 -156.48 C 151.529 -156.48 153.2 -172.32 174.268 -179.27 L 187.98 -191.49 L 205.036 -203.17 L 225.769 -210.39 L 262.221 -212.89 C 262.221 -212.89 270.916 -212.89 276.266 -208.45 C 281.617 -204 277.604 -213.73 277.604 -213.73 C 277.604 -213.73 291.316 -215.4 293.991 -205.67 L 307.033 -202.9 L 329.439 -190.39 C 329.439 -190.39 345.825 -173.15 341.143 -157.32 L 338.802 -162.88 C 338.802 -162.88 324.757 -159.82 344.822 -148.99 L 338.802 -133.97 L 333.117 -116.46 L 326.095 -102.3 L 322.081 -93.407 L 319.406 -90.35 L 315.727 -97.858 L 317.399 -108.98 L 310.378 -116.19 L 304.357 -127.87 L 292.653 -135.36 L 269.911 -135.92 L 242.155 -137.31 L 229.782 -132.58 L 213.395 -125.08 C 213.395 -125.08 204.032 -121.74 203.697 -121.47 C 203.363 -121.19 194.333 -109.8 194.333 -109.8 C 194.333 -109.8 193.999 -102.85 193.999 -102.57 C 193.999 -102.3 193.664 -86.459 193.664 -86.459 L 187.646 -86.459 L 179.286 -100.77 Z"
+                    />
+                    <g clipPath="url(#hair-clip)">
+                      <path d="M150 -216 L232 -216 C214 -190 206 -160 200 -86 L150 -86 Z" fill="#1B1720" />
+                      <ellipse
+                        cx="282"
+                        cy="-196"
+                        rx="42"
+                        ry="11"
+                        fill="#3F3745"
+                        transform="rotate(-18 282 -196)"
+                      />
+                    </g>
+                  </g>
+                </g>
+                <g id="left-eye" style={{ transformBox: "fill-box", transformOrigin: "6.5px 10px" }}>
+                  <ellipse cx="170" cy="204" rx="6.5" ry="10" fill="#5A3A2E" />
+                </g>
+                <g id="right-eye" style={{ transformBox: "fill-box", transformOrigin: "6.5px 10px" }}>
+                  <ellipse cx="230" cy="204" rx="6.5" ry="10" fill="#5A3A2E" />
+                </g>
+                <g id="mouth">
+                  <path
+                    d="M178 254 Q200 266 222 254"
+                    stroke="#D29A73"
+                    strokeWidth="7"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                </g>
+              </g>
+            </g>
+
+            {/* ---------------- PUPIL OVERLAY (mouse-follow + blink) ---------------- */}
+            <g id="group-1" transform="matrix(1, 0, 0, 1, 176.19008, -99.614404)">
+              <g id="group-10" style={{ transformOrigin: "200px 552px" }}>
+                <g id="group-22" style={{ transformOrigin: "200px 276px" }}>
+                  <g id="group-24">
+                    <path d="M 136 112 C 136 112 136 246 136 200 L 136 112 Z" style={{ fill: "rgb(252, 221, 185)" }} />
+                    <path d="M 136 112 C 136 112 136 240 136 200 L 136 112 Z" fill="#F2C79B" />
+                  </g>
+                  <g id="cj-eyes">
+                    <g id="group-26" style={{ transformBox: "fill-box", transformOrigin: "50% 50%" }}>
+                      <g>
+                        <circle cx="-6.046" cy="304.186" r="3.5" fill="#111111" />
+                      </g>
+                      <circle cx="-4.546" cy="301.686" r="1.5" fill="#FFFFFF" opacity="0.85" />
+                    </g>
+                    <g id="group-27" style={{ transformBox: "fill-box", transformOrigin: "50% 50%" }}>
+                      <g>
+                        <circle cx="53.968" cy="304.372" r="3.5" fill="#111111" />
+                      </g>
+                      <circle cx="55.468" cy="301.872" r="1.5" fill="#FFFFFF" opacity="0.85" />
+                    </g>
+                  </g>
+                  <g id="group-28" />
+                </g>
+              </g>
             </g>
           </g>
         </g>
