@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 
-const ROOT = "/home/z/my-project";
+const ROOT = process.cwd();
 const UP = path.join(ROOT, "upload");
 const PUB = path.join(ROOT, "public");
 const IMG = path.join(PUB, "images");
